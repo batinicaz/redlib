@@ -2,37 +2,19 @@ name: Build & Publish
 on:
   push:
     branches: ["main"]
-  schedule:
-    - cron: 0 2 * * *
 permissions:
   contents: read
   packages: write
   security-events: write
 jobs:
-  resolve-versions:
-    runs-on: ubuntu-latest
-    outputs:
-      build_args: ${{ steps.versions.outputs.build_args }}
-    steps:
-      - uses: batinicaz/gha/.github/actions/resolve-versions@v1
-        id: versions
-        with:
-          versions: |
-            [
-              {"arg": "TERRAFORM_VERSION", "repo": "hashicorp/terraform"},
-              {"arg": "TF_LINT_VERSION", "repo": "terraform-linters/tflint", "strip_v": false}
-            ]
   build:
-    needs: resolve-versions
     uses: batinicaz/gha/.github/workflows/docker.yml@v1
     with:
-      build_args: ${{ needs.resolve-versions.outputs.build_args }}
-      no_cache_filter: build
+      runner: ubuntu-24.04-arm
+      smoke_test_timeout: 2
       smoke_test: |
-        # TODO: Update test repo and ref for your image
-        git clone --depth 1 --branch v1.2.9 https://github.com/batinicaz/oci-core /tmp/test
-        sudo chown -R 65532 /tmp/test
-        docker run --rm -v /tmp/test:/test -w /test "$IMAGE"
-        sudo chown -R "$(id -u):$(id -g)" /tmp/test
+        docker run -d --name redlib -p 8080:8080 "$IMAGE"
+        curl -sf --retry 15 --retry-all-errors --retry-delay 2 -o /dev/null http://localhost:8080/settings
+        docker rm -f redlib
     secrets:
       GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
