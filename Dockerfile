@@ -7,7 +7,7 @@ WORKDIR /redlib
 ADD https://github.com/redlib-org/redlib.git#${REDLIB_COMMIT} .
 RUN cargo build --release --locked --bin redlib
 
-FROM cgr.dev/chainguard/glibc-dynamic:latest@sha256:48ce6d7d3006f17054a54ef41aac5222ac308282db6d67ed508cf024a6df04de
+FROM cgr.dev/chainguard/glibc-dynamic:latest@sha256:2c362104c7f7adc37e6bdc87451450ff3834871a6268d930815cbe561493f947
 COPY --from=build /redlib/target/release/redlib /usr/local/bin/redlib
 EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/redlib"]
